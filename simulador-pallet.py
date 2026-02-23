@@ -187,7 +187,7 @@ with tab_excel:
             except Exception as e:
                 st.error(f"⚠️ Ocorreu um erro inesperado: {e}")
 
-                
+
 st.markdown("""
 <style>
 .author {
@@ -225,10 +225,10 @@ st.markdown("""
     <p>Engenheiro de Dados | Soluções Logísticas | Automações</p>
     <div style="margin: 10px 0;">
         <a href="https://github.com/MySpaceCrazy" target="_blank">
-            <img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_caixas_2D/refs/heads/main/github.ico" alt="GitHub" style="width: 32px; height: 32px; margin-right: 10px;">
+            <img src="https://raw.githubusercontent.com/MySpaceCrazy/simualdor-pallet3D/refs/heads/main/ico/github.ico" alt="GitHub" style="width: 32px; height: 32px; margin-right: 10px;">
         </a>
         <a href="https://www.linkedin.com/in/%C3%A2nderson-matheus-flores-de-oliveira-5b92781b4" target="_blank">
-            <img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_caixas_2D/refs/heads/main/linkedin.ico" alt="LinkedIn" style="width: 32px; height: 32px;">
+            <img src="https://raw.githubusercontent.com/MySpaceCrazy/simualdor-pallet3D/refs/heads/main/ico/linkedin.ico" alt="LinkedIn" style="width: 32px; height: 32px;">
         </a>
     </div>
     <p class="footer-text">© 2025 Ânderson Oliveira. Todos os direitos reservados.</p>
