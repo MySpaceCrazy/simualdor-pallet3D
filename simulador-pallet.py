@@ -4,15 +4,19 @@ import pandas as pd
 import io
 
 # Configuração da Página
-#st.set_page_config(page_title="Simulador de Paletização", layout="wide")
-
-#st.title("📦 Dashboard de Cubagem e Paletização")
-#st.markdown("---")
-
 st.set_page_config(page_title="Simulador de Paletização", page_icon="📦", layout="wide")
 st.title("📦 Dashboard de Cubagem e Paletização")
 
 st.markdown("---")
+
+# --- BANCO DE DADOS DE CAMINHÕES (Medidas aproximadas internas em cm) ---
+caminhoes = {
+    "VUC (Veículo Urbano de Carga)": {"l": 420.0, "w": 220.0, "h": 220.0},
+    "Caminhão Toco": {"l": 700.0, "w": 240.0, "h": 240.0},
+    "Caminhão Truck": {"l": 900.0, "w": 240.0, "h": 240.0},
+    "Carreta (Eixo Simples/Duplo)": {"l": 1400.0, "w": 240.0, "h": 240.0},
+    "Carreta LS": {"l": 1500.0, "w": 240.0, "h": 240.0}
+}
 
 # Criando as duas abas
 tab_visual, tab_excel = st.tabs(["🎮 Simulador Visual 3D", "📊 Processamento em Massa (Excel)"])
@@ -42,14 +46,18 @@ with tab_visual:
     with col_in3:
         st.subheader("Produto")
         un_por_caixa = st.number_input("Unidades por Caixa", value=800, key="v_un")
+        
+        # --- NOVO INPUT: TIPO DE CAMINHÃO ---
+        st.subheader("Transporte")
+        tipo_caminhao = st.selectbox("Selecione o Tipo de Caminhão", list(caminhoes.keys()))
 
     st.markdown("---")
     
-    # --- LÓGICA DE CÁLCULO INTELIGENTE ---
+    # --- LÓGICA DE CÁLCULO INTELIGENTE (PALLET) ---
     h_disponivel = h_max_rack - h_pallet_base
     camadas = int(h_disponivel // box_h)
 
-    # Testar orientações para achar o melhor encaixe
+    # Testar orientações para achar o melhor encaixe no pallet
     fit_l_a = int(pallet_l // box_l)
     fit_w_a = int(pallet_w // box_w)
     total_a = fit_l_a * fit_w_a
@@ -69,15 +77,44 @@ with tab_visual:
 
     total_caixas = int(caixas_por_camada * camadas)
     total_unidades = int(total_caixas * un_por_caixa)
+    altura_total_pallet = h_pallet_base + (camadas * box_h)
+
+    # --- LÓGICA DE CÁLCULO INTELIGENTE (CAMINHÃO) ---
+    truck_l = caminhoes[tipo_caminhao]["l"]
+    truck_w = caminhoes[tipo_caminhao]["w"]
+    truck_h = caminhoes[tipo_caminhao]["h"]
+
+    # Testar orientações do pallet dentro do caminhão
+    t_fit_l_a = int(truck_l // pallet_l)
+    t_fit_w_a = int(truck_w // pallet_w)
+    t_total_a = t_fit_l_a * t_fit_w_a
+
+    t_fit_l_b = int(truck_l // pallet_w)
+    t_fit_w_b = int(truck_w // pallet_l)
+    t_total_b = t_fit_l_b * t_fit_w_b
+
+    if t_total_a >= t_total_b:
+        pallets_por_camada = t_total_a
+        p_final_l, p_final_w = pallet_l, pallet_w
+        p_dim_l, p_dim_w = t_fit_l_a, t_fit_w_a
+    else:
+        pallets_por_camada = t_total_b
+        p_final_l, p_final_w = pallet_w, pallet_l
+        p_dim_l, p_dim_w = t_fit_l_b, t_fit_w_b
+
+    # Verifica se os pallets podem ser empilhados dentro do caminhão
+    camadas_pallet_caminhao = int(truck_h // altura_total_pallet) if altura_total_pallet > 0 else 0
+    total_pallets_caminhao = pallets_por_camada * camadas_pallet_caminhao
 
     # --- EXIBIÇÃO DE RESULTADOS (KPIs) ---
-    col_r1, col_r2, col_r3 = st.columns(3)
-    col_r1.metric("Total de Caixas", f"{total_caixas} un")
-    col_r2.metric("Total de Produtos", f"{total_unidades} un")
-    col_r3.metric("Altura Total da Pilha", f"{h_pallet_base + (camadas * box_h):.1f} cm")
+    col_r1, col_r2, col_r3, col_r4 = st.columns(4)
+    col_r1.metric("Caixas / Pallet", f"{total_caixas} un")
+    col_r2.metric("Produtos / Pallet", f"{total_unidades} un")
+    col_r3.metric("Altura Total da Pilha", f"{altura_total_pallet:.1f} cm")
+    col_r4.metric("Capacidade do Caminhão", f"{total_pallets_caminhao} Pallets")
 
-    # --- VISUALIZAÇÃO 3D ---
-    def create_3d_box(x, y, z, dx, dy, dz, color, name):
+    # --- FUNÇÃO ÚNICA PARA CRIAR CAIXAS 3D ---
+    def create_3d_box(x, y, z, dx, dy, dz, color, name, opacity=0.7):
         return go.Mesh3d(
             x=[x, x, x+dx, x+dx, x, x, x+dx, x+dx],
             y=[y, y+dy, y+dy, y, y, y+dy, y+dy, y],
@@ -85,33 +122,68 @@ with tab_visual:
             i=[7, 0, 0, 0, 4, 4, 6, 6, 4, 0, 3, 2],
             j=[3, 4, 1, 2, 5, 6, 5, 2, 0, 1, 6, 3],
             k=[0, 7, 2, 3, 6, 7, 1, 1, 5, 5, 7, 6],
-            opacity=0.7, color=color, name=name,
+            opacity=opacity, color=color, name=name,
             flatshading=True
         )
 
-    fig = go.Figure()
-    fig.add_trace(create_3d_box(0, 0, 0, pallet_l, pallet_w, h_pallet_base, 'peru', 'Pallet'))
+    # --- DIVISÃO DOS GRÁFICOS (Esquerda: Pallet | Direita: Caminhão) ---
+    col_plot1, col_plot2 = st.columns(2)
 
-    for c in range(camadas):
-        for i in range(dim_l):
-            for j in range(dim_w):
-                fig.add_trace(create_3d_box(
-                    i * final_l, j * final_w, h_pallet_base + (c * box_h), 
-                    final_l, final_w, box_h, 'bisque', 'Caixa'
-                ))
+    # === PLOT 1: PALLET INDIVIDUAL ===
+    with col_plot1:
+        st.subheader("Visualização do Pallet")
+        fig_pallet = go.Figure()
+        fig_pallet.add_trace(create_3d_box(0, 0, 0, pallet_l, pallet_w, h_pallet_base, 'peru', 'Pallet'))
 
-    fig.update_layout(
-        scene=dict(
-            xaxis=dict(title='Comprimento', range=[0, max(pallet_l, pallet_w)+10]),
-            yaxis=dict(title='Largura', range=[0, max(pallet_l, pallet_w)+10]),
-            zaxis=dict(title='Altura', range=[0, h_max_rack + 10]),
-            aspectmode='data'
-        ),
-        margin=dict(l=0, r=0, b=0, t=40),
-        showlegend=False
-    )
-    st.plotly_chart(fig, use_container_width=True)
+        for c in range(camadas):
+            for i in range(dim_l):
+                for j in range(dim_w):
+                    fig_pallet.add_trace(create_3d_box(
+                        i * final_l, j * final_w, h_pallet_base + (c * box_h), 
+                        final_l, final_w, box_h, 'bisque', 'Caixa'
+                    ))
 
+        fig_pallet.update_layout(
+            scene=dict(
+                xaxis=dict(title='Comprimento', range=[0, max(pallet_l, pallet_w)+10]),
+                yaxis=dict(title='Largura', range=[0, max(pallet_l, pallet_w)+10]),
+                zaxis=dict(title='Altura', range=[0, h_max_rack + 10]),
+                aspectmode='data'
+            ),
+            margin=dict(l=0, r=0, b=0, t=20),
+            showlegend=False
+        )
+        st.plotly_chart(fig_pallet, use_container_width=True)
+
+    # === PLOT 2: CAMINHÃO ===
+    with col_plot2:
+        st.subheader("Ocupação do Caminhão")
+        fig_truck = go.Figure()
+        
+        # Base do caminhão (Chão)
+        fig_truck.add_trace(create_3d_box(0, 0, -5, truck_l, truck_w, 5, 'darkgrey', 'Chassi', opacity=0.9))
+
+        # Adiciona os pallets já montados como blocos inteiros dentro do caminhão
+        for c in range(camadas_pallet_caminhao):
+            for i in range(p_dim_l):
+                for j in range(p_dim_w):
+                    # Representando o pallet inteiro + carga como um bloco azul claro
+                    fig_truck.add_trace(create_3d_box(
+                        i * p_final_l, j * p_final_w, (c * altura_total_pallet),
+                        p_final_l, p_final_w, altura_total_pallet, 'royalblue', 'Pallet Fechado', opacity=0.6
+                    ))
+
+        fig_truck.update_layout(
+            scene=dict(
+                xaxis=dict(title='Compr. Caminhão', range=[-10, truck_l+20]),
+                yaxis=dict(title='Larg. Caminhão', range=[-10, truck_w+20]),
+                zaxis=dict(title='Altura Caminhão', range=[-10, truck_h+20]),
+                aspectmode='data'
+            ),
+            margin=dict(l=0, r=0, b=0, t=20),
+            showlegend=False
+        )
+        st.plotly_chart(fig_truck, use_container_width=True)
 
 # ==========================================
 # ABA 2: PROCESSAMENTO EM MASSA (EXCEL)
@@ -233,4 +305,4 @@ st.markdown("""
     </div>
     <p class="footer-text">© 2025 Ânderson Oliveira. Todos os direitos reservados.</p>
 </div>
-""", unsafe_allow_html=True) 
+""", unsafe_allow_html=True)
