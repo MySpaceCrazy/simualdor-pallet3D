@@ -4,9 +4,14 @@ import pandas as pd
 import io
 
 # Configuração da Página
-st.set_page_config(page_title="Simulador de Paletização", layout="wide")
+#st.set_page_config(page_title="Simulador de Paletização", layout="wide")
 
+#st.title("📦 Dashboard de Cubagem e Paletização")
+#st.markdown("---")
+
+st.set_page_config(page_title="Simulador de Paletização", page_icon="📦", layout="wide")
 st.title("📦 Dashboard de Cubagem e Paletização")
+
 st.markdown("---")
 
 # Criando as duas abas
@@ -181,3 +186,51 @@ with tab_excel:
                 st.error(f"⚠️ Erro: Não encontrei a coluna {e} no seu Excel. Verifique se o nome está exatamente igual.")
             except Exception as e:
                 st.error(f"⚠️ Ocorreu um erro inesperado: {e}")
+
+                
+st.markdown("""
+<style>
+.author {
+    padding: 40px 20px;
+    text-align: center;
+    background-color: #000000;
+    color: white;
+}
+
+.author img {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+}
+
+.author p {
+    margin-top: 15px;
+    font-size: 1rem;
+}
+</style>
+
+<style>
+    .author-name {
+        font-weight: bold;
+        font-size: 1.4rem;
+        color: white;
+    }
+</style>
+
+<div class="author">
+    <img src="https://avatars.githubusercontent.com/u/90271653?v=4" alt="Autor">
+    <div class="author-name">
+        <p>Ânderson Oliveira</p>
+    </div>    
+    <p>Engenheiro de Dados | Soluções Logísticas | Automações</p>
+    <div style="margin: 10px 0;">
+        <a href="https://github.com/MySpaceCrazy" target="_blank">
+            <img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_caixas_2D/refs/heads/main/github.ico" alt="GitHub" style="width: 32px; height: 32px; margin-right: 10px;">
+        </a>
+        <a href="https://www.linkedin.com/in/%C3%A2nderson-matheus-flores-de-oliveira-5b92781b4" target="_blank">
+            <img src="https://raw.githubusercontent.com/MySpaceCrazy/Simulador_caixas_2D/refs/heads/main/linkedin.ico" alt="LinkedIn" style="width: 32px; height: 32px;">
+        </a>
+    </div>
+    <p class="footer-text">© 2025 Ânderson Oliveira. Todos os direitos reservados.</p>
+</div>
+""", unsafe_allow_html=True) 
