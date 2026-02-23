@@ -109,18 +109,26 @@ with tab_visual:
     total_caixas_caminhao = total_pallets_caminhao * total_caixas
     total_unidades_caminhao = total_pallets_caminhao * total_unidades
 
+    # --- FUNÇÃO DE FORMATAÇÃO DE NÚMEROS (Padrão BR) ---
+    def formatar_numero(valor):
+        # Transforma 201600 em "201.600"
+        return f"{int(valor):,}".replace(",", ".")
+
     # --- EXIBIÇÃO DE RESULTADOS (KPIs) ---
     st.markdown("### 📊 Resultados do Pallet")
     col_r1, col_r2, col_r3 = st.columns(3)
-    col_r1.metric("Caixas / Pallet", f"{total_caixas} un")
-    col_r2.metric("Produtos / Pallet", f"{total_unidades} un")
-    col_r3.metric("Altura Total da Pilha", f"{altura_total_pallet:.1f} cm")
+    col_r1.metric("Caixas / Pallet", f"{formatar_numero(total_caixas)} un")
+    col_r2.metric("Produtos / Pallet", f"{formatar_numero(total_unidades)} un")
+    
+    # Formata a altura trocando o ponto por vírgula para os decimais
+    altura_formatada = f"{altura_total_pallet:.1f}".replace(".", ",")
+    col_r3.metric("Altura Total da Pilha", f"{altura_formatada} cm")
 
     st.markdown("### 🚚 Ocupação do Caminhão")
     col_t1, col_t2, col_t3 = st.columns(3)
-    col_t1.metric("Capacidade do Caminhão", f"{total_pallets_caminhao} Pallets")
-    col_t2.metric("Total de Caixas (Carga Total)", f"{total_caixas_caminhao} un")
-    col_t3.metric("Total de Produtos (Carga Total)", f"{total_unidades_caminhao} un")
+    col_t1.metric("Capacidade do Caminhão", f"{formatar_numero(total_pallets_caminhao)} Pallets")
+    col_t2.metric("Total de Caixas (Carga Total)", f"{formatar_numero(total_caixas_caminhao)} un")
+    col_t3.metric("Total de Produtos (Carga Total)", f"{formatar_numero(total_unidades_caminhao)} un")
 
     st.markdown("---")
 
