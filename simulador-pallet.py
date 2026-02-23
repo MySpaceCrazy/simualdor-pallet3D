@@ -137,7 +137,7 @@ with tab_excel:
                 # Função que calcula linha por linha
                 def calcular_linha(row):
                     # Usando os nomes exatos das colunas da sua imagem
-                    b_l = float(row['Comprimen'])
+                    b_l = float(row['Comprimento'])
                     b_w = float(row['Largura'])
                     b_h = float(row['Altura'])
                     # Aqui estou considerando que "Numerad" é o número de unidades na caixa
