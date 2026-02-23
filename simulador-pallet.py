@@ -141,7 +141,7 @@ with tab_excel:
                     b_w = float(row['Largura'])
                     b_h = float(row['Altura'])
                     # Aqui estou considerando que "Numerad" é o número de unidades na caixa
-                    un_por_cx = float(row['Numerad'].replace(' UN', '') if isinstance(row['Numerad'], str) else row['Numerad'])
+                    un_por_cx = float(row['Numerador'].replace(' UN', '') if isinstance(row['Numerador'], str) else row['Numerador'])
                     
                     h_util = p_h_max - p_h_base
                     camadas = int(h_util // b_h) if b_h > 0 else 0
