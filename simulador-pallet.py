@@ -47,7 +47,6 @@ with tab_visual:
         st.subheader("Produto")
         un_por_caixa = st.number_input("Unidades por Caixa", value=800, key="v_un")
         
-        # --- NOVO INPUT: TIPO DE CAMINHÃO ---
         st.subheader("Transporte")
         tipo_caminhao = st.selectbox("Selecione o Tipo de Caminhão", list(caminhoes.keys()))
 
@@ -106,12 +105,24 @@ with tab_visual:
     camadas_pallet_caminhao = int(truck_h // altura_total_pallet) if altura_total_pallet > 0 else 0
     total_pallets_caminhao = pallets_por_camada * camadas_pallet_caminhao
 
+    # Totais Globais do Caminhão
+    total_caixas_caminhao = total_pallets_caminhao * total_caixas
+    total_unidades_caminhao = total_pallets_caminhao * total_unidades
+
     # --- EXIBIÇÃO DE RESULTADOS (KPIs) ---
-    col_r1, col_r2, col_r3, col_r4 = st.columns(4)
+    st.markdown("### 📊 Resultados do Pallet")
+    col_r1, col_r2, col_r3 = st.columns(3)
     col_r1.metric("Caixas / Pallet", f"{total_caixas} un")
     col_r2.metric("Produtos / Pallet", f"{total_unidades} un")
     col_r3.metric("Altura Total da Pilha", f"{altura_total_pallet:.1f} cm")
-    col_r4.metric("Capacidade do Caminhão", f"{total_pallets_caminhao} Pallets")
+
+    st.markdown("### 🚚 Ocupação do Caminhão")
+    col_t1, col_t2, col_t3 = st.columns(3)
+    col_t1.metric("Capacidade do Caminhão", f"{total_pallets_caminhao} Pallets")
+    col_t2.metric("Total de Caixas (Carga Total)", f"{total_caixas_caminhao} un")
+    col_t3.metric("Total de Produtos (Carga Total)", f"{total_unidades_caminhao} un")
+
+    st.markdown("---")
 
     # --- FUNÇÃO ÚNICA PARA CRIAR CAIXAS 3D ---
     def create_3d_box(x, y, z, dx, dy, dz, color, name, opacity=0.7):
@@ -155,19 +166,29 @@ with tab_visual:
         )
         st.plotly_chart(fig_pallet, use_container_width=True)
 
-    # === PLOT 2: CAMINHÃO ===
+    # === PLOT 2: CAMINHÃO 3D DETALHADO ===
     with col_plot2:
-        st.subheader("Ocupação do Caminhão")
+        st.subheader("Visualização do Caminhão")
         fig_truck = go.Figure()
         
-        # Base do caminhão (Chão)
-        fig_truck.add_trace(create_3d_box(0, 0, -5, truck_l, truck_w, 5, 'darkgrey', 'Chassi', opacity=0.9))
+        # 1. Base da Carroceria (Chassi da carga)
+        fig_truck.add_trace(create_3d_box(0, 0, -10, truck_l, truck_w, 10, 'darkgrey', 'Carroceria', opacity=0.9))
 
-        # Adiciona os pallets já montados como blocos inteiros dentro do caminhão
+        # 2. Cabine do Caminhão (Na frente da carroceria)
+        cabin_l = 200 # Comprimento da cabine (2 metros)
+        cabin_h = 280 # Altura da cabine
+        fig_truck.add_trace(create_3d_box(truck_l + 10, 0, -10, cabin_l, truck_w, cabin_h, 'silver', 'Cabine', opacity=1.0))
+
+        # 3. Rodas/Eixos (Caixas escuras representando os pneus)
+        # Rodas Traseiras
+        fig_truck.add_trace(create_3d_box(truck_l * 0.15, -10, -50, 100, truck_w + 20, 40, '#2F2F2F', 'Pneus Traseiros', opacity=1.0))
+        # Rodas Dianteiras (Embaixo da cabine)
+        fig_truck.add_trace(create_3d_box(truck_l + 60, -10, -50, 100, truck_w + 20, 40, '#2F2F2F', 'Pneus Dianteiros', opacity=1.0))
+
+        # 4. Adiciona os pallets (Carga Azul)
         for c in range(camadas_pallet_caminhao):
             for i in range(p_dim_l):
                 for j in range(p_dim_w):
-                    # Representando o pallet inteiro + carga como um bloco azul claro
                     fig_truck.add_trace(create_3d_box(
                         i * p_final_l, j * p_final_w, (c * altura_total_pallet),
                         p_final_l, p_final_w, altura_total_pallet, 'royalblue', 'Pallet Fechado', opacity=0.6
@@ -175,9 +196,9 @@ with tab_visual:
 
         fig_truck.update_layout(
             scene=dict(
-                xaxis=dict(title='Compr. Caminhão', range=[-10, truck_l+20]),
-                yaxis=dict(title='Larg. Caminhão', range=[-10, truck_w+20]),
-                zaxis=dict(title='Altura Caminhão', range=[-10, truck_h+20]),
+                xaxis=dict(title='Compr. Caminhão', range=[-20, truck_l + cabin_l + 50]),
+                yaxis=dict(title='Larg. Caminhão', range=[-30, truck_w + 30]),
+                zaxis=dict(title='Altura Caminhão', range=[-60, max(truck_h, cabin_h) + 20]),
                 aspectmode='data'
             ),
             margin=dict(l=0, r=0, b=0, t=20),
